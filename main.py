@@ -14,4 +14,4 @@ st.write("""
 # 버튼 추가 및 풍선 효과
 if st.button("풍선 날리기! 🎈"):
     st.balloons()
-    st.success("데이터 시각화 완료!")
+    st.success("박지후 제거 완!!!")
