@@ -1,31 +1,41 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
-# 웹 앱 제목
-st.title("🎉 랜덤 데이터 시각화 & 축하 풍선! 🎈")
+st.title("⚡ 포물선 운동 시뮬레이터")
 
 st.write("""
-이 앱은 랜덤 데이터를 생성하고, 
-버튼을 누르면 차트와 함께 풍선이 날아갑니다!
+발사 각도와 초기 속도를 조절해 공이 날아가는 궤적을 시각화해보세요!
 """)
 
-# 랜덤 데이터 생성 함수
-def generate_data(rows=20):
-    data = pd.DataFrame({
-        "X": np.arange(1, rows + 1),
-        "Y": np.random.randint(10, 100, size=rows)
-    })
-    return data
+# 입력값
+angle = st.slider("발사 각도 (도)", 0, 90, 45)
+speed = st.slider("초기 속도 (m/s)", 1, 50, 20)
 
-# 버튼 클릭 시 데이터 생성 및 시각화
-if st.button("데이터 생성 & 시각화"):
-    df = generate_data()
-    st.line_chart(df.set_index("X"))  # X축을 인덱스로 설정
-    st.success("데이터가 성공적으로 시각화되었습니다! 🎉")
-    st.balloons()  # 풍선 효과
+# 중력 가속도
+g = 9.8
 
-# 데이터 확인용 테이블
-if st.checkbox("생성된 데이터 보기"):
-    df = generate_data()
-    st.dataframe(df)
+# 시간 계산
+angle_rad = np.radians(angle)
+t_flight = 2 * speed * np.sin(angle_rad) / g
+t = np.linspace(0, t_flight, num=100)
+
+# 포물선 좌표 계산
+x = speed * np.cos(angle_rad) * t
+y = speed * np.sin(angle_rad) * t - 0.5 * g * t**2
+
+# 그래프 출력
+fig, ax = plt.subplots()
+ax.plot(x, y, label=f"{angle}도, {speed} m/s")
+ax.set_xlabel("거리 (m)")
+ax.set_ylabel("높이 (m)")
+ax.set_title("포물선 운동")
+ax.legend()
+ax.grid(True)
+st.pyplot(fig)
+
+# 풍선 효과
+if st.button("성공! 🎈"):
+    st.balloons()
+    st.success("포물선 운동 시뮬레이션 완료!")
+
