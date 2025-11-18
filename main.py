@@ -1,101 +1,70 @@
-import streamlit as st
+import random
 
-st.set_page_config(page_title="🎓 세부 학과 추천 설문조사", layout="centered")
+# 포켓몬 클래스 정의
+class Pokemon:
+    def __init__(self, name, type_, hp, attack, defense, moves):
+        self.name = name
+        self.type_ = type_
+        self.hp = hp
+        self.max_hp = hp
+        self.attack = attack
+        self.defense = defense
+        self.moves = moves
 
-st.title("🎯 분야별 성향으로 알아보는 나에게 맞는 학과 추천")
+    def is_alive(self):
+        return self.hp > 0
 
-st.write("""
-아래 질문에 솔직하게 답하면, 각 분야별 성향을 분석하여 당신에게 맞는 학과를 추천합니다.  
-각 문항은 1점(전혀 아니다)~5점(매우 그렇다)로 답해주세요.
-""")
+    def attack_target(self, move, target):
+        damage = max(0, self.attack + move["power"] - target.defense)
+        # 랜덤 보너스
+        damage = int(damage * random.uniform(0.85, 1.15))
+        target.hp -= damage
+        if target.hp < 0:
+            target.hp = 0
+        print(f"{self.name}의 {move['name']}! {target.name}에게 {damage} 데미지!")
+        print(f"{target.name} HP: {target.hp}/{target.max_hp}\n")
 
-# 문항과 분야
-questions = [
-    {"question": "1. 새로운 기술을 배우는 것을 좋아한다.", "field": "협력/사회형"},
-    {"question": "2. 사람들과 협력하는 것을 즐긴다.", "field": "협력/사회형"},
-    {"question": "3. 문제를 논리적으로 해결하는 편이다.", "field": "분석형/논리형"},
-    {"question": "4. 창의적인 아이디어를 내는 것을 좋아한다.", "field": "창의형"},
-    {"question": "5. 모험적이고 도전적인 성향이 있다.", "field": "모험/혁신형"},
-    {"question": "6. 계획적이고 체계적으로 일하는 것을 선호한다.", "field": "분석형/논리형"},
-    {"question": "7. 데이터를 분석하고 통계적 판단을 내리는 것을 좋아한다.", "field": "분석형/논리형"},
-    {"question": "8. 디자인이나 예술적인 활동을 즐긴다.", "field": "창의형"},
-    {"question": "9. 컴퓨터나 소프트웨어를 활용한 프로젝트에 관심이 있다.", "field": "과학/공학형"},
-    {"question": "10. 새로운 환경이나 변화에 빠르게 적응하는 편이다.", "field": "모험/혁신형"},
-    {"question": "11. 팀 프로젝트에서 주도적으로 아이디어를 내는 편이다.", "field": "협력/사회형"},
-    {"question": "12. 수학 문제를 푸는 것을 즐긴다.", "field": "분석형/논리형"},
-    {"question": "13. 사회적 이슈에 관심이 많다.", "field": "협력/사회형"},
-    {"question": "14. 과학 실험이나 연구 활동을 좋아한다.", "field": "과학/공학형"},
-    {"question": "15. 글쓰기나 발표를 통해 아이디어를 표현하는 것을 좋아한다.", "field": "창의형"},
-    {"question": "16. 여러 가지 일을 동시에 관리할 수 있는 편이다.", "field": "분석형/논리형"},
-    {"question": "17. 논리적 설득이나 토론에 자신이 있다.", "field": "분석형/논리형"},
-    {"question": "18. 환경, 생명, 의료 분야에 관심이 있다.", "field": "과학/공학형"},
-    {"question": "19. 기계, 전자, 로봇 관련 활동에 흥미가 있다.", "field": "과학/공학형"},
-    {"question": "20. 창업, 혁신, 미래 기술에 관심이 있다.", "field": "모험/혁신형"}
-]
+# 예시 포켓몬
+pikachu = Pokemon(
+    name="피카츄",
+    type_="전기",
+    hp=100,
+    attack=20,
+    defense=10,
+    moves=[{"name": "전기쇼크", "power": 25}, {"name": "몸통박치기", "power": 15}]
+)
 
-# 점수 선택지
-options = ["1", "2", "3", "4", "5"]
+charmander = Pokemon(
+    name="파이리",
+    type_="불",
+    hp=100,
+    attack=18,
+    defense=12,
+    moves=[{"name": "불꽃세례", "power": 22}, {"name": "할퀴기", "power": 18}]
+)
 
-# 사용자 응답 저장
-scores = []
-fields = []
-for q in questions:
-    score = st.radio(q["question"], options, index=2, horizontal=True, key=q["question"])
-    scores.append(int(score))
-    fields.append(q["field"])
+# 배틀 진행
+def battle(pokemon1, pokemon2):
+    print("포켓몬 배틀 시작!\n")
+    turn = 0
+    while pokemon1.is_alive() and pokemon2.is_alive():
+        if turn % 2 == 0:
+            # 플레이어1 공격
+            move = random.choice(pokemon1.moves)
+            pokemon1.attack_target(move, pokemon2)
+        else:
+            # 플레이어2 공격
+            move = random.choice(pokemon2.moves)
+            pokemon2.attack_target(move, pokemon1)
+        turn += 1
 
-# 분야별 점수 계산
-field_scores = {}
-for score, field in zip(scores, fields):
-    if field in field_scores:
-        field_scores[field] += score
+    if pokemon1.is_alive():
+        print(f"{pokemon1.name} 승리!")
     else:
-        field_scores[field] = score
+        print(f"{pokemon2.name} 승리!")
 
-# 추천 학과 데이터 (각 분야별 최대 점수 기준)
-recommendations = {
-    "분석형/논리형": {
-        "title": "📊 분석적 성향 - 경제/경영/통계",
-        "description": "계획적이고 논리적인 성향의 학생에게 추천. 수치 분석과 문제 해결에 강점이 있는 학과입니다.",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Economics-Student.jpg/320px-Economics-Student.jpg"
-    },
-    "창의형": {
-        "title": "🎨 창의적 성향 - 디자인/미디어/건축",
-        "description": "창의적이고 독창적인 성향의 학생에게 추천. 시각적 표현과 아이디어 개발에 강점이 있는 학과입니다.",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Architecture-student-drawing.jpg/320px-Architecture-student-drawing.jpg"
-    },
-    "협력/사회형": {
-        "title": "🤝 사회적 성향 - 교육학/심리학/사회복지학",
-        "description": "협력과 소통을 중요시하는 성향의 학생에게 추천. 사람과 사회에 관심이 많은 학과입니다.",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Students_collaborating.jpg/320px-Students_collaborating.jpg"
-    },
-    "모험/혁신형": {
-        "title": "🚀 혁신적 성향 - AI/로봇/스타트업",
-        "description": "도전적이고 혁신적인 성향의 학생에게 추천. 창업과 미래 기술, 새로운 도전에 강점이 있는 학과입니다.",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Robotics_student.jpg/320px-Robotics_student.jpg"
-    },
-    "과학/공학형": {
-        "title": "🛠 공학적 성향 - 전자/기계/컴퓨터공학",
-        "description": "과학적이고 기술적인 성향의 학생에게 추천. 실용적 문제 해결과 기술 개발에 흥미가 있는 학과입니다.",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Engineering_student_work.jpg/320px-Engineering_student_work.jpg"
-    }
-}
+# 배틀 시작
+battle(pikachu, charmander)
 
-# 결과 출력
-if st.button("🔮 추천 학과 보기"):
-    st.subheader("분야별 점수")
-    for field, score in field_scores.items():
-        st.write(f"{field}: {score}점")
-    
-    st.subheader("추천 학과")
-    # 점수가 가장 높은 분야 추천
-    max_field = max(field_scores, key=field_scores.get)
-    rec = recommendations[max_field]
-    
-    st.subheader(rec["title"])
-    st.write(rec["description"])
-    st.image(rec["image"], use_column_width=True)
-    
-    st.balloons()
 
 
