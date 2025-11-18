@@ -2,79 +2,49 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="고등학생용 투사체 운동 시뮬레이터")
+st.title("🎯 대포 발사 포물선 시뮬레이터")
 
-st.title("🎯 고등학생 수준 투사체 운동 (공기저항 포함) 시뮬레이터")
+# --- Sidebar Controls ---
+st.sidebar.header("🔧 조작 메뉴")
+angle = st.sidebar.slider("발사 각도 (degrees)", 0, 90, 45)
+speed = st.sidebar.slider("발사 속도 (m/s)", 1, 100, 40)
+target_x = st.sidebar.slider("목표물 x 위치 (m)", 10, 200, 80)
+g = 9.8  # 중력가속도
 
-st.write("""
-이 시뮬레이터는 **선형 항력(공기저항)**을 이용한 투사체 운동을 계산합니다.
-- 항력은 속도에 비례한다고 가정합니다.
-- 고등학생 수준에서 가능한 가장 단순한 공기저항 모델입니다.
-""")
+# --- Physics ---
+theta = np.radians(angle)
+v0x = speed * np.cos(theta)
+v0y = speed * np.sin(theta)
 
-# -------------------------
-# 입력값 UI
-# -------------------------
-speed = st.slider("초기 속도 (m/s)", 1.0, 100.0, 40.0)
-angle = st.slider("발사 각도 (도)", 1.0, 89.0, 45.0)
-k = st.slider("항력 계수 k", 0.0, 1.0, 0.1)
-dt = 0.01  # 시간 간격
-g = 9.8
+# 최대 도달 시간
+t_flight = (v0y + np.sqrt(v0y**2 + 2 * g * 0)) / g * 2
+t = np.linspace(0, t_flight, 300)
 
-# 초기값 설정
-angle_rad = np.radians(angle)
-vx = speed * np.cos(angle_rad)
-vy = speed * np.sin(angle_rad)
-x, y = 0, 0
+# 궤적 계산
+x = v0x * t
+y = v0y * t - 0.5 * g * t**2
+y = np.maximum(y, 0)
 
-# 결과 저장 리스트
-xs, ys = [x], [y]
+# --- Plot ---
+fig, ax = plt.subplots()
+ax.plot(x, y, label="포탄 궤적")
 
-# -------------------------
-# 시뮬레이션
-# -------------------------
-while y >= 0:
-    # 가속도
-    ax = -k * vx
-    ay = -g - k * vy
+# 목표물 표시
+ax.scatter([target_x], [0], color="red", s=100, label="🎯 목표물")
 
-    # 속도 업데이트
-    vx += ax * dt
-    vy += ay * dt
-
-    # 위치 업데이트
-    x += vx * dt
-    y += vy * dt
-
-    xs.append(x)
-    ys.append(y)
-
-    if x > 1000:  # 안전장치
-        break
-
-# 사거리/최대고도 계산
-max_height = max(ys)
-range_m = xs[-2]  # 지면 도달 직전 위치
-flight_time = len(xs) * dt
-
-# -------------------------
-# 결과 출력
-# -------------------------
-st.subheader("📌 시뮬레이션 결과")
-st.write(f"**비행 시간:** {flight_time:.2f} 초")
-st.write(f"**최대 고도:** {max_height:.2f} m")
-st.write(f"**사거리:** {range_m:.2f} m")
-
-# -------------------------
-# 궤적 그래프
-# -------------------------
-fig, ax = plt.subplots(figsize=(7,4))
-ax.plot(xs, ys, label="투사체 궤적")
 ax.set_xlabel("x (m)")
 ax.set_ylabel("y (m)")
-ax.set_title("투사체 운동 궤적 (공기저항 포함)")
-ax.grid(True)
+ax.set_title("포물선 대포 발사 궤적")
+ax.legend()
+
 st.pyplot(fig)
 
-st.write("---")
-st.write("Tip: 항력 계수 k 값을 0으로 하면 **이상적 포물선 운동(공기저항 없음)**이 나옵니다!")
+# --- Hit detection ---
+# 목표물 크기 범위
+target_width = 2.0
+hit = np.any((x > target_x - target_width) & (x < target_x + target_width) & (y < 1))
+
+if hit:
+    st.success("🎉 명중 성공!")
+else:
+    st.error("💥 명중 실패! 각도와 속도를 조절하세요.")
